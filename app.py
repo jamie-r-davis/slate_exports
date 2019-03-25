@@ -2,14 +2,13 @@ import sys
 
 from loguru import logger
 import requests
-from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from utils.login import login
+from umdriver import UMDriver
 
 import config
 
 
-class ContextDriver(webdriver.Chrome):
+class ContextDriver(UMDriver):
     def __enter__(self):
         return self
     def __exit__(self, exception_type, exception_value, traceback):
@@ -23,10 +22,9 @@ def main():
     options = Options()
     options.headless = True
     # init headless webdriver
-    with ContextDriver(options=options) as d:
+    with UMDriver(options=options) as d:
         # authenticate with u-m
-        d.get('https://weblogin.umich.edu')
-        login(d, **config.AUTH)
+        d.login(**config.AUTH)
         # visit each env to establish session cookies
         for env in config.SLATE_ENVS:
             d.get(env['host']+'/manage')
