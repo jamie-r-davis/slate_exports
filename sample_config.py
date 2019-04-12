@@ -15,3 +15,12 @@ SLATE_ENVS = [
         'endpoint':'/manage/query/run?id=7b2ae527-d043-4821-874c-a42f96d490bd&h=c344ffbf-c9ca-50f0-1f72-f1f14209d059&cmd=service&output=json',
     },
 ]
+
+
+ONE_OFF_QUERIES = [
+    {
+        'name': 'Convert Application Materials to Folio',
+        'host': 'https://umi-2.test.technolutions.net',
+        'query': '50884e6d-29b9-4525-ab6f-b5bc393a7003'
+    },
+]

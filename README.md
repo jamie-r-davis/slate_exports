@@ -13,9 +13,19 @@ Got a list of scheduled export queries that you need to run more frequently than
 
 ## Usage
 
-Run the script with:
-```python
-python app.py
+Run the script with one or more of the following arguments:
+
+- `--integrations`: will run all of the queries actively scheduled under Peoplesoft Service Account
+- `--one-offs`: will run all of the queries configured under `config.ONE_OFF_QUERIES`
+```bash
+# run integrations only
+python app.py --integrations
+
+# run one-off queries
+python app.py --one-offs
+
+# run both
+python app.py --integrations --one-offs
 ```
 
 The script will use a headless chrome driver to authenticate. Then it will use requests to retrieve the list of queries to run for each environment defined in your `config.py`. For each query, it will run the export job and log the result. Logs will be piped to `stdout` as well as `app.log`.
