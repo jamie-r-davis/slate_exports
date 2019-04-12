@@ -19,15 +19,16 @@ logger.add(sys.stdout, level='INFO', format='<green>{time}</green> <level>{messa
 logger.add('app.log', level='INFO', format='<green>{time}</green> <level>{message}</level>')
 
 
-def run_query(session, host, query_id):
-    url = f"{host}/manage/query/query?id={query_id}"
+def run_query(session, host, query, name='Unnamed Query'):
+    url = f"{host}/manage/query/query?id={query}"
     r = session.post(url, data={'cmd': 'run'})
-    logger.info(f"[{host}] {r.status_code}: {query_id}")
+    logger.info(f"[{host}] {r.status_code}: {query} ({name})")
 
 def get_cookies(driver, session):
     """Sets cookies from the driver to the session object"""
     for cookie in driver.get_cookies():
         session.cookies.set(cookie['name'], cookie['value'])
+
 
 def main():
     options = Options()
@@ -37,8 +38,8 @@ def main():
         # authenticate with u-m
         d.login(**config.AUTH)
         # visit each env to establish session cookies
-
         if '--integrations' in sys.argv:
+            logger.info('Running integration queries...')
             for env in config.SLATE_ENVS:
                 d.get(env['host']+'/manage')
                 logger.debug(d.current_url)
@@ -50,16 +51,18 @@ def main():
                 r = s.get(query_url.format(**env))
                 logger.debug(r.json())
                 for q in r.json()['row']:
-                    export_url = '{host}/manage/service/export?id={id}'
-                    r2 = s.get(export_url.format(host=env['host'], id=q['id']))
-                    logger.info(f"[{env['host']}] {r2.status_code}: {r2.text} ({q['name']})")
+                    run_query(s, host=env['host'], query=q['id'], name=q['name'])
         # fire any one-off queries
         if '--one-offs' in sys.argv:
-            for q in config.ONE_OFF_QUERIES:
+            logger.info('Running one-off queries...')
+            for query_obj in config.ONE_OFF_QUERIES:
+                # make sure driver has session
                 d.get(f"{q['host']}/manage")
+                # create clean session with cookies from driver
                 s = requests.session()
                 get_cookies(d, s)
-                run_query(s, q['host'], q['query'])
+                # run query
+                run_query(s, **query_obj)
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
