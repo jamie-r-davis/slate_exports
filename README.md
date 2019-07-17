@@ -6,7 +6,7 @@ Got a list of scheduled export queries that you need to run more frequently than
 
 ## Setup
 
-1. Clone `sample_config.py`, ranaming it to `config.py`
+1. Clone `sample_config.py`, renaming it to `config.py`
 2. Add your SSO login credentials
 3. Configure a query in your slate environment that will return a list of queries to run. Make sure to include `query.[id]` and `query.[name]` in the exports.
 4. Add an entry in the `SLATE_ENVS` for the query you just defined, making to sure to define `host` and `endpoint` keys correctly.
