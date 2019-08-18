@@ -29,6 +29,9 @@ def get_cookies(driver, session):
     for cookie in driver.get_cookies():
         session.cookies.set(cookie['name'], cookie['value'])
 
+def notify_slack(webhook, message):
+    requests.post(webhook, json={'text': message}, headers={'Conternt-type': 'application/json'})
+
 
 def main():
     options = Options()
@@ -53,6 +56,9 @@ def main():
                 with ThreadPoolExecutor(max_workers=4) as executor:
                     for q in r.json()['row']:
                         executor.submit(run_query, s, env['host'], q['id'], q['name'])
+                if hasattr(config, 'SLACK_WEBHOOK'):
+                    notify_slack(config.SLACK_WEBHOOK, f'`{env["host"]}`: Integration exports finished')
+
         # fire any one-off queries
         if '--one-offs' in sys.argv:
             logger.info('Running one-off queries...')
@@ -65,8 +71,29 @@ def main():
                 # run query
                 run_query(s, **q)
 
+        # force import/pickup
+        if '--imports' in sys.argv:
+            logger.info('Running imports...')
+            for host in config.IMPORT_HOSTS:
+                d.get(f"{host}/manage")
+                s = requests.session()
+                get_cookies(d, s)
+                r = s.get(f"{host}/manage/service/import?cmd=pickup")
+                r.raise_for_status()
+                logger.info(r.text)
+                try:
+                    r2 = s.get(f"{host}/manage/import/load?cmd=process", timeout=10)
+                except requests.exceptions.ReadTimeout:
+                    logger.debug('Import request sent, connection closed.')
+                else:
+                    logger.info(r2.text)
+                finally:
+                    if hasattr(config, 'SLACK_WEBHOOK'):
+                        notify_slack(config.SLACK_WEBHOOK, f'`{host}`: Force pickup/import completed')
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        logger.error('Please provide command line arguments [--integrations | --one-offs]')
+        logger.error('Please provide command line arguments [--integrations | --one-offs | --integrations]')
     else:
         main()
