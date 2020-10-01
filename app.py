@@ -11,6 +11,9 @@ logger.remove()
 logger.add(
     sys.stdout, level="INFO", format="<green>{time}</green> <level>{message}</level>"
 )
+logger.add(
+    'app.log', level="INFO", format="<green>{time}</green> <level>{message}</level>"
+)
 
 
 def get_external_session(hostname, username, password):
@@ -56,6 +59,18 @@ def notify_slack(webhook, message):
         webhook, json={"text": message}, headers={"Conternt-type": "application/json"}
     )
 
+def get_oneoff_args():
+    try:
+        start = sys.argv.index('--one-offs')
+    except ValueError:
+        return
+    one_offs = []
+    for arg in sys.argv[start+1:]:
+        if arg.startswith('--'):
+            break
+        one_offs.append(arg)
+    return one_offs
+
 
 def main():
     username = os.environ.get("SLATE_EXPORTS_USER")
@@ -83,11 +98,16 @@ def main():
     # fire any one-off queries
     if "--one-offs" in sys.argv:
         logger.info("Running one-off queries...")
-        for q in config.ONE_OFF_QUERIES:
-            # initialize session
-            s = get_external_session(q["host"], username, password)
-            # run query
-            run_query(s, **q)
+        one_offs = get_oneoff_args()
+        for one_off in one_offs:
+            q = config.ONE_OFF_QUERIES.get(one_off)
+            if q:
+                # initialize session
+                s = get_external_session(q["host"], username, password)
+                # run query
+                run_query(s, **q)
+            else:
+                logger.error(f"{q} not found in ONE_OFF_QUERIES")
 
     # force import/pickup
     if "--imports" in sys.argv:

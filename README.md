@@ -31,3 +31,29 @@ python app.py --integrations --one-offs
 ```
 
 The script authenticate with your environments and then use requests to retrieve the list of queries to run for each environment defined in your `config.py`. For each query, if the `active` attribute is true, it will run the export job and log the result. Logs will be piped to `stdout` as well as `app.log`.
+
+
+### One-Off Queries
+
+To use the one-off query feature, define any one-off jobs in `config.py` under `ONE_OFF_QUERIES` like so:
+
+```python
+ONE_OFF_QUERIES = {
+    'application-creation': {
+        'name': 'Application Creation',
+        'host': 'https://myslateinstance.edu',
+        'query': '{query-guid-here}'
+    },
+    'special-query': {
+        'name': 'Special Query',
+        'host': 'https://myslateinstance.edu',
+        'query': '{query-guid-here}'
+    }
+}
+```
+
+These queries can be triggered by running the following command:
+
+```bash
+python app.py --one-offs application-creation special-query
+```
